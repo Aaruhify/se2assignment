@@ -4,52 +4,37 @@ import sys, os, time, atexit
 from signal import SIGTERM
  
 class Daemon:
-        """
-        A generic daemon class.
-       
-        Usage: subclass the Daemon class and override the run() method
-        """
-        def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/stdout', stderr='/dev/stdout'):
+
+        # all I/O Redirected to null streams
+        def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
                 self.stdin = stdin
                 self.stdout = stdout
                 self.stderr = stderr
                 self.pidfile = pidfile
-                self.dirs = []
 
         def addDir(self, directory):
                 self.dirs.append(directory)
                 
         def daemonize(self):
-                """
-                do the UNIX double-fork magic, see Stevens' "Advanced
-                Programming in the UNIX Environment" for details (ISBN 0201563177)
-                http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
-                """
                 try:
                         pid = os.fork()
                         if pid > 0:
-                                # exit first parent
                                 sys.exit(0)
                 except OSError, e:
                         sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
                         sys.exit(1)
-       
-                # decouple from parent environment
+                        
                 os.chdir("/")
                 os.setsid()
                 os.umask(0)
-       
-                # do second fork
                 try:
                         pid = os.fork()
                         if pid > 0:
-                                # exit from second parent
                                 sys.exit(0)
                 except OSError, e:
                         sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
                         sys.exit(1)
        
-                # redirect standard file descriptors
                 sys.stdout.flush()
                 sys.stderr.flush()
                 si = file(self.stdin, 'r')
@@ -59,7 +44,6 @@ class Daemon:
                 os.dup2(so.fileno(), sys.stdout.fileno())
                 os.dup2(se.fileno(), sys.stderr.fileno())
        
-                # write pidfile
                 atexit.register(self.delpid)
                 pid = str(os.getpid())
                 file(self.pidfile,'w+').write("%s\n" % pid)
@@ -68,7 +52,6 @@ class Daemon:
                 os.remove(self.pidfile)
 
         def isRunning(self):
-                # Check for a pidfile to see if the daemon already runs
                 try:
                         pf = file(self.pidfile,'r')
                         pid = int(pf.read().strip())
@@ -79,25 +62,18 @@ class Daemon:
         
  
         def start(self):
-                """
-                Start the daemon
-                """
+
                 pid = self.isRunning()
                 if pid:
                         message = "pidfile %s already exist. Daemon already running?\n"
                         sys.stderr.write(message % self.pidfile)
                         sys.exit(1)
                
-                # Start the daemon
                 print "Daemonizing"
                 self.daemonize()
                 self.run()
  
         def stop(self):
-                """
-                Stop the daemon
-                """
-                # Get the pid from the pidfile
                 try:
                         pf = file(self.pidfile,'r')
                         pid = int(pf.read().strip())
@@ -108,9 +84,8 @@ class Daemon:
                 if not pid:
                         message = "pidfile %s does not exist. Daemon not running?\n"
                         sys.stderr.write(message % self.pidfile)
-                        return # not an error in a restart
+                        return 
  
-                # Try killing the daemon process       
                 try:
                         while 1:
                                 os.kill(pid, SIGTERM)
@@ -125,17 +100,11 @@ class Daemon:
                                 sys.exit(1)
  
         def restart(self):
-                """
-                Restart the daemon
-                """
                 self.stop()
                 self.start()
  
         def run(self):
-                """
-                You should override this method when you subclass Daemon. It will be called after the process has been
-                daemonized by start() or restart().
-                """
-
+                # must be overriden
+                
 
                 
