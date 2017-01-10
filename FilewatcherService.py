@@ -5,10 +5,11 @@ import thread, os
 from daemon import Daemon
 from filewatcher import Watchman
 from FileWatchManager import WatchManager, WatchClient
+from FileWatcherConfig import fwconfig
 
 import threading
 
-pidFile = "/tmp/filewatch-daemon.pid"
+pidFile = fwconfig["service"]["pidFile"]
 
 
 

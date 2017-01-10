@@ -1,6 +1,7 @@
 # Imports start
 
-import os, sys, logging, glob, time
+import os, sys, logging, glob, time, traceback
+import base64
 from optparse import OptionParser
 import sqlite3
 import utils
@@ -25,11 +26,14 @@ phoneNumberTableCreateQuery = "create table if not exists phonenumber( phoneid I
 
 personTableCreateQuery = "create table if not exists person(personid INT PRIMARY KEY, firstname text not null,  lastname text not null,  middlename text, age INT CHECK (age > 0 and age <= 100), filename TEXT)"
 
-fileCreateTable = "create table if not exists temptable(filename TEXT PRIMARY KEY, compressedfilecontent TEXT, filehash TEXT, priority INT, isvalid boolean)"
+fileCreateTable = "create table if not exists temptable(filename TEXT PRIMARY KEY, compressedfilecontent VARBINARY, filehash TEXT, priority INT, isvalid boolean)"
 
-updateQuery = 'update temptable set priority={0}, compressedfilecontent="{1}", filehash="{2}", isvalid="{3}" where filename="{4}"'
+updateQuery = 'update temptable set priority={0}, compressedfilecontent="{1}", filehash="{2}", isvalid={3} where filename="{4}"'
 
-insertQuery = 'insert into temptable values("{0}", "{1}", "{2}", "{3}", "{4}")'
+
+updateQuery2 = 'update temptable set priority=%d, compressedfilecontent="%s", filehash="%s", isvalid="%d" where filename="%s"'
+
+insertQuery = 'insert into temptable values("{0}", "{1}", "{2}", "{3}", {4})'
 
 selectQuery = 'select * from temptable where compressed=0 order by priority'
 
@@ -51,7 +55,6 @@ def setupDirectory(path):
 class Compressor(object):
     connection = None;
     def validateConfig(self, config):
-        print "I am here"
         readDBLocation = config["dbpath"]        
         if readDBLocation == None or not os.path.exists(readDBLocation):
             print "Input DB Doesn't Exist"
@@ -63,7 +66,6 @@ class Compressor(object):
 
         
     def __init__(self, config):
-        print "I am here 2"
         self.validateConfig(config)
         self.directory = config["directory"]
         workingDirectory = os.path.join(config["directory"], configDirectory)
@@ -82,6 +84,7 @@ class Compressor(object):
                 self.initialize()
             except Exception:
                 print "Something Failed"
+                traceback.print_exc()
             time.sleep(self.delay)
 
     def getNewRecords(self):
@@ -93,12 +96,15 @@ class Compressor(object):
         
     def saveRecord(self, fileName, priority, data):
         fileCheckSum = md5Hash(fileName)
-        query = updateQuery.format(priority, data, fileCheckSum, 0, fileName)
+        data = base64.b64encode(data)
+        print data;
+        query = updateQuery.format(priority, data, fileCheckSum, "null", fileName)
+        query.encode('utf8')
         count = utils.executeDBStatements(self.connection, query);
         print count;
         if count > 0:
             return;
-        query = insertQuery.format(fileName, data, fileCheckSum, priority, 0)
+        query = insertQuery.format(fileName, data, fileCheckSum, priority, "null")
         utils.executeDBStatements(self.connection, query);
             
     def initialize(self):

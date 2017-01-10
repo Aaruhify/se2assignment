@@ -21,6 +21,14 @@ def executeDBStatements(connection, query):
     connection.commit()
     return count
 
+def executeDBBLOBStatements(connection, query, data):
+    print "Info: Executing Query ", query
+    cursor = connection.cursor()
+    cursor.execute(query, data)
+    count = cursor.rowcount;
+    connection.commit()
+    return count
+
 def executeDBSelectStatements(connection, query):
     print "Info: Executing Query ", query
     cursor = connection.cursor()

@@ -4,11 +4,16 @@ import sys
 from daemon import Daemon
 from filewatcher import Watchman
 import utils
+from FileWatcherConfig import fwconfig
+
+tconfig = fwconfig["manager"]
+
+
+queueFile = tconfig["queueFile"]
+queueReadDelay = tconfig["sleepDuration"]
+
 
 threadLock = threading.Lock();
-queueFile = "/tmp/dirQueue.txt"
-queueReadDelay = 3
-
 class WatcherThread (threading.Thread):
     def __init__(self, config, name):
         threading.Thread.__init__(self)

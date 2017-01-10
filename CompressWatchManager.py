@@ -44,7 +44,7 @@ class WatchManager(Daemon):
             dirs = self.readListDirs(queueFile)
             for directory in dirs:
                 conf = utils.watcherConfigWrapper(directory, 3)
-                conf["dbpath"] = os.path.join(directory, ".filewatcher", "tempdb.db");
+                conf["dbpath"] = os.path.join(directory, ".filewatcher", "tempdb");
                 print conf["dbpath"]
                 thread1 = WatcherThread(conf, "CompressorThread")
                 thread1.start()

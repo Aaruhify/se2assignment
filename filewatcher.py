@@ -1,25 +1,26 @@
 # Imports start
 
-import os, sys, logging, glob, time
+import os, sys, logging, glob, time, traceback, json
 from optparse import OptionParser
 import sqlite3
 import utils
+from FileWatcherConfig import fwconfig
 
-defaultDBName = "tempdb.db"
-defaultDelay = 60
+tconfig = fwconfig["watcher"]
+
+defaultDBName = tconfig["dbname"]
+defaultDelay = tconfig["sleepDuration"]
 defaultConfig = {
     "delay": 60
 }
-configDirectory = ".filewatcher"
+configDirectory = tconfig["configDir"]
 
 
-addressTableCreateQuery = "create table if not exists address( addressid INT PRIMARY KEY, streetaddress TEXT NOT NULL, city TEXT NOT NULL,  state TEXT NOT NULL, postalcode TEXT NOT NULL, personid INT UNIQUE REFERENCES PERSON(PERSONID))"
+fileCreateTable = tconfig["createTableQuery"]
 
-phoneNumberTableCreateQuery = "create table if not exists phonenumber( phoneid INT PRIMARY KEY, type TEXT, number TEXT UNIQUE, personid INT REFERENCES PERSON(PERSONID))"
+updateQuery = tconfig["updateDataQuery"]
 
-personTableCreateQuery = "create table if not exists person(personid INT PRIMARY KEY, firstname text not null,  lastname text not null,  middlename text, age INT CHECK (age > 0 and age <= 100), filename TEXT)"
-
-fileCreateTable = "create table if not exists temptable(filename TEXT PRIMARY KEY, filecontent TEXT, priority INT, compressed BOOLEAN)"
+insertQuery = tconfig["insertDataQuery"]
 
 # Imports end
 
@@ -38,7 +39,7 @@ class Watchman(object):
         self.connection = utils.setupDBConnection(dbLocation)
         utils.executeDBStatements(self.connection, fileCreateTable);
         self.config = config if config != None else defaultConfig
-        self.delay = config["delay"] if config["delay"] != None else defaultDelay
+        self.delay = defaultDelay
  
     def cyclize(self):
         while True:
@@ -46,15 +47,16 @@ class Watchman(object):
                 self.initialize()
             except Exception:
                 print "Something Failed"
+                traceback.print_exc()
             time.sleep(self.delay)
         
     def saveRecord(self, fileName, priority, data):
-        query = 'update temptable set priority=%d, filecontent="%s", compressed=%d where filename="%s"' % (priority, data, 0, fileName)
+        query = updateQuery.format(priority, data, 0, fileName)
         count = utils.executeDBStatements(self.connection, query);
         print count;
         if count > 0:
             return;
-        query = 'insert into temptable values("%s", "%s", "%d", "%d")' % (fileName, data, priority, 0)
+        query = insertQuery.format(fileName, data, priority, 0)
         print query;
         utils.executeDBStatements(self.connection, query);
             
@@ -70,5 +72,8 @@ class Watchman(object):
             fileBytes = open(fileName, "rb")
             data = fileBytes.read();
             fileBytes.close()
+ #           data = json.loads(data)
+#            data = json.dumps(data)
+            print data
             self.saveRecord(fileName, priority, data)
     
