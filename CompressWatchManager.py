@@ -18,7 +18,7 @@ class WatcherThread (threading.Thread):
         print "Starting " + self.name
         # Get lock to synchronize threads
         threadLock.acquire()
-        Compressor(self.config).initialize();
+        Compressor(self.config).cyclize();
         # Free lock to release next thread
         threadLock.release()
 
@@ -28,15 +28,7 @@ class WatchClient(object):
         with open(queueFile, "a") as outFile:
             outFile.write(directory)
             
-class WatchManager(Daemon):
-    def appendDir(self, directory):
-        with open(queueFile, "a") as outFile:
-            outFile.write(directory)
-            
-    def appendDirToStop(self, directory):
-        with open(queueFile, "a") as outFile:
-            outFile.write(directory + "- stop")
-            
+class WatchManager(Daemon):            
     def readListDirs(self,fname):
         if not os.path.isfile(fname) :
             return [];

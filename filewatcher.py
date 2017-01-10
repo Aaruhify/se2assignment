@@ -27,6 +27,7 @@ fileCreateTable = "create table if not exists temptable(filename TEXT PRIMARY KE
 def setupDirectory(path):
     if not os.path.exists(path):
         os.makedirs(path);
+
 class Watchman(object):
     connection = None;
     def __init__(self, config):
@@ -58,18 +59,16 @@ class Watchman(object):
         utils.executeDBStatements(self.connection, query);
             
     def initialize(self):
-        while True:
-            os.chdir(self.directory)
-            for iFile in glob.glob(".*.json.*[0-9]"):
-                fileName = utils.getFileName(iFile, "json")
-                priority = utils.getFilePriority(iFile)
-                os.rename(iFile, iFile+".processed")
-                if not os.path.isfile(fileName):
-                    print "%s doesn't exist" % fileName
-                    continue;
-                fileBytes = open(fileName, "rb")
-                data = fileBytes.read();
-                fileBytes.close()
-                self.saveRecord(fileName, priority, data)
-            time.sleep(self.delay)
+        os.chdir(self.directory)
+        for iFile in glob.glob(".*.json.*[0-9]"):
+            fileName = utils.getFileName(iFile, "json")
+            priority = utils.getFilePriority(iFile)
+            os.rename(iFile, iFile+".processed")
+            if not os.path.isfile(fileName):
+                print "%s doesn't exist" % fileName
+                continue;
+            fileBytes = open(fileName, "rb")
+            data = fileBytes.read();
+            fileBytes.close()
+            self.saveRecord(fileName, priority, data)
     

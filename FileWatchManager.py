@@ -18,7 +18,7 @@ class WatcherThread (threading.Thread):
         print "Starting " + self.name
         # Get lock to synchronize threads
         threadLock.acquire()
-        Watchman(self.config).initialize();
+        Watchman(self.config).cyclize();
         # Free lock to release next thread
         threadLock.release()
 

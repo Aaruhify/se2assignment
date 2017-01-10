@@ -102,13 +102,11 @@ class Compressor(object):
         utils.executeDBStatements(self.connection, query);
             
     def initialize(self):
-        while True:
-            records = self.getNewRecords();
-            for record in records:
-                fileName = record[0];
-                data = record[1];
-                priority = record[2]
-                self.saveRecord(fileName, priority, data);
-            time.sleep(self.delay)
+        records = self.getNewRecords();
+        for record in records:
+            fileName = record[0];
+            data = record[1];
+            priority = record[2]
+            self.saveRecord(fileName, priority, data);
         
     
